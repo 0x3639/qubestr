@@ -19,7 +19,7 @@ For a detailed technical specification of these custom Nostr events, please see 
 ### Core Features
 - **Built with Khatru**: A high-performance, lightweight, and customizable relay framework.
 - **PostgreSQL Backend**: Uses a PostgreSQL database for robust and persistent event storage.
-- **Mandatory Authentication**: All connections must authenticate via NIP-42. Both publishing and reading events are protected.
+- **Public Read Access**: Events can be read by anyone. Publishing requires NIP-42 authentication with strict authorization.
 - **Dockerized**: Comes with `docker-compose.yml` for easy and reproducible deployment.
 - **Specialized Logic**: Contains strict validation rules tailored specifically for HyperQube network events.
 
@@ -43,8 +43,9 @@ For a detailed technical specification of these custom Nostr events, please see 
     - If `status` is `failure`, an `error` tag with a reason is required.
 
 #### 2. **Authentication**
-- **NIP-42 Required**: All clients must authenticate to read or write any events. The relay will send an `AUTH` challenge on connect.
-- **Permissioned Writing**: Only public keys defined in the `AUTHORIZED_PUBKEYS` environment variable can publish `HyperSignal` (kind 33321) events. This ensures that only trusted administrators can issue commands to the network.
+- **Reading Events**: No authentication required. Anyone can subscribe to and read events from the relay.
+- **Writing Events**: NIP-42 authentication is required to publish any events. The relay will send an `AUTH` challenge on connect.
+- **Permissioned Publishing**: Only public keys defined in the `AUTHORIZED_PUBKEYS` environment variable can publish `HyperSignal` (kind 33321) events. This ensures that only trusted administrators can issue commands to the network.
 
 ## API Endpoints
 - **WebSocket**: `ws://localhost:3334`
