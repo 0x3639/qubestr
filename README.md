@@ -141,6 +141,61 @@ The relay is configured via environment variables loaded from a `.env` file.
 | `DB_QUERY_LIMIT`| The default query limit for event requests. | `100` |
 | `DB_KEEP_RECENT_EVENTS`| Whether to keep an in-memory cache of recent events. | `false` |
 
+## Upgrading the Relay
+
+### For Docker Deployments
+
+If you're running the relay via Docker Compose:
+
+```bash
+# Navigate to your qubestr directory
+cd /path/to/qubestr
+
+# Pull the latest changes
+git pull origin main
+
+# Rebuild and restart the containers
+docker-compose down
+docker-compose up --build -d
+
+# Verify the relay is running
+docker-compose logs -f qubestr
+```
+
+**Note:** The database volume is preserved during upgrades, so your event history will remain intact.
+
+### For Local Development/Standalone Deployments
+
+If you're running the relay locally without Docker:
+
+```bash
+# Navigate to your qubestr directory
+cd /path/to/qubestr
+
+# Pull the latest changes
+git pull origin main
+
+# Update Go dependencies
+go mod tidy
+
+# Stop the running relay (Ctrl+C if running in foreground, or kill the process)
+
+# Rebuild and restart
+go run ./cmd/qubestr
+```
+
+### Migration Notes
+
+**Upgrading from versions with mandatory read authentication:**
+
+This version changes the authentication model:
+- **Previous behavior**: Both reading and writing events required NIP-42 authentication
+- **New behavior**: Reading is publicly accessible, writing still requires authentication
+
+**No database migrations required.** This change only affects the relay's authentication logic, not the data schema. Your existing PostgreSQL database and events remain unchanged.
+
+**Breaking change for clients:** Clients that were previously required to authenticate for reading events no longer need to do so. However, clients that already authenticate will continue to work without any changes.
+
 ## API Examples
 
 The examples below provide a quick overview. For the complete specification, including all required tags and validation rules, please refer to [hyperqube-events.md](./hyperqube-events.md).
