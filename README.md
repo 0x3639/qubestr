@@ -19,7 +19,9 @@ For a detailed technical specification of these custom Nostr events, please see 
 ### Core Features
 - **Built with Khatru**: A high-performance, lightweight, and customizable relay framework.
 - **PostgreSQL Backend**: Uses a PostgreSQL database for robust and persistent event storage.
-- **Public Read Access**: Events can be read by anyone. Publishing requires NIP-42 authentication with strict authorization.
+- **Public Read Access**: Events can be read by anyone without authentication.
+- **Permissioned Commands**: Only authorized HC1 developers can publish network commands (Kind 33321).
+- **Open Node Reporting**: HyperQube nodes can report status without authentication (Kind 3333).
 - **Dockerized**: Comes with `docker-compose.yml` for easy and reproducible deployment.
 - **Specialized Logic**: Contains strict validation rules tailored specifically for HyperQube network events.
 
@@ -37,6 +39,7 @@ For a detailed technical specification of these custom Nostr events, please see 
     - `action` must be either `upgrade` or `reboot`.
     - If `action` is `reboot`, the `genesis_url` and `required_by` tags are also required.
 - **QubeManager (Kind 3333)**:
+    - Can be published by any node without authentication (uses `node_id` for tracking).
     - Requires an `a` tag referencing the kind 33321 `HyperSignal` event it is responding to.
     - Requires `version`, `network`, `action`, `status`, `node_id`, and `action_at` tags.
     - `status` must be either `success` or `failure`.
@@ -44,8 +47,9 @@ For a detailed technical specification of these custom Nostr events, please see 
 
 #### 2. **Authentication**
 - **Reading Events**: No authentication required. Anyone can subscribe to and read events from the relay.
-- **Writing Events**: NIP-42 authentication is required to publish any events. The relay will send an `AUTH` challenge on connect.
-- **Permissioned Publishing**: Only public keys defined in the `AUTHORIZED_PUBKEYS` environment variable can publish `HyperSignal` (kind 33321) events. This ensures that only trusted administrators can issue commands to the network.
+- **Writing Events**:
+  - **Kind 33321 (HyperSignal)**: Requires NIP-42 authentication AND pubkey must be in `AUTHORIZED_PUBKEYS` whitelist. Only trusted HC1 developers can issue commands.
+  - **Kind 3333 (QubeManager)**: No authentication required. Any node can report status using its `node_id` for tracking.
 
 ## API Endpoints
 - **WebSocket**: `ws://localhost:3334`
@@ -186,15 +190,26 @@ go run ./cmd/qubestr
 
 ### Migration Notes
 
-**Upgrading from versions with mandatory read authentication:**
+**Recent Authentication Model Changes:**
 
-This version changes the authentication model:
-- **Previous behavior**: Both reading and writing events required NIP-42 authentication
-- **New behavior**: Reading is publicly accessible, writing still requires authentication
+The relay has undergone two authentication model changes:
 
-**No database migrations required.** This change only affects the relay's authentication logic, not the data schema. Your existing PostgreSQL database and events remain unchanged.
+1. **Public read access** (previous update):
+   - **Previous**: Both reading and writing required NIP-42 authentication
+   - **Current**: Reading is publicly accessible
 
-**Breaking change for clients:** Clients that were previously required to authenticate for reading events no longer need to do so. However, clients that already authenticate will continue to work without any changes.
+2. **Unauthenticated node reports** (latest update):
+   - **Previous**: Kind 3333 (QubeManager) events required NIP-42 authentication
+   - **Current**: Kind 3333 events can be published without authentication
+   - **Rationale**: Eliminates npub management overhead for potentially hundreds/thousands of HyperQube nodes
+
+**No database migrations required.** These changes only affect the relay's authentication logic, not the data schema. Your existing PostgreSQL database and events remain unchanged.
+
+**Breaking changes for clients:**
+- Reading clients no longer need to authenticate
+- HyperQube nodes publishing Kind 3333 status reports no longer need to authenticate
+- Kind 33321 (HyperSignal) commands still require authentication with `AUTHORIZED_PUBKEYS` whitelist
+- Clients that already authenticate will continue to work without any changes
 
 ## API Examples
 
