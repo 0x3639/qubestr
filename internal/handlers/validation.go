@@ -86,11 +86,12 @@ func ValidateHyperSignalEvent(ctx context.Context, event *nostr.Event) (bool, st
 
 func ValidateQubeManagerEvent(ctx context.Context, event *nostr.Event) (bool, string) {
 	if event.Kind == 3333 {
-		if khatru.GetAuthed(ctx) == "" {
-			message := "auth-required: publishing Kind 3333 requires authentication"
-			log.Printf("Event rejected. ID: %s, Kind: %d, Pubkey: %s, Reason: %s", event.ID, event.Kind, event.PubKey, message)
-			return true, message
+		authenticatedPubkey := khatru.GetAuthed(ctx)
+		if authenticatedPubkey == "" {
+			log.Printf("Unauthenticated Kind 3333 event. Node ID: %s, Event ID: %s, Pubkey: %s",
+				getTagValue(event, "node_id"), event.ID, event.PubKey)
 		}
+		// Allow both authenticated and unauthenticated Kind 3333 events
 
 		requiredTags := []string{"a", "version", "network", "action", "status", "node_id", "action_at"}
 		for _, tag := range requiredTags {

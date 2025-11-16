@@ -68,7 +68,8 @@ The relay uses a rejection-based validation approach with three main validators:
    - Content field must be non-empty
 
 3. **ValidateQubeManagerEvent**: For Kind 3333 events:
-   - Requires NIP-42 authentication
+   - Does NOT require authentication (allows both authenticated and unauthenticated events)
+   - Logs unauthenticated events with node_id, event_id, and pubkey for monitoring
    - Requires tags: `a`, `version`, `network`, `action`, `status`, `node_id`, `action_at`
    - `a` tag must match format: `33321:<64_hex_pubkey>:hyperqube`
    - `action` must be "upgrade" or "reboot"
@@ -103,9 +104,9 @@ Kind 3333 events are regular events, so the relay preserves all acknowledgments 
 1. Client connects via WebSocket
 2. Relay immediately sends AUTH challenge (NIP-42)
 3. **Reading events:** No authentication required (unauthenticated reads are logged)
-4. **Writing events:** Authentication required for both event kinds
-   - Kind 33321 publishing requires pubkey to be in AUTHORIZED_PUBKEYS whitelist
-   - Kind 3333 publishing requires authentication but no whitelist
+4. **Writing events:**
+   - Kind 33321 (HyperSignal commands): Requires authentication AND pubkey must be in AUTHORIZED_PUBKEYS whitelist
+   - Kind 3333 (QubeManager node reports): No authentication required (unauthenticated events are logged with node_id)
 
 ## Important Files
 
