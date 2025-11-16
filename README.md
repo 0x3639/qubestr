@@ -19,7 +19,7 @@ For a detailed technical specification of these custom Nostr events, please see 
 ### Core Features
 - **Built with Khatru**: A high-performance, lightweight, and customizable relay framework.
 - **PostgreSQL Backend**: Uses a PostgreSQL database for robust and persistent event storage.
-- **Mandatory Authentication**: All connections must authenticate via NIP-42. Both publishing and reading events are protected.
+- **Public Read Access**: Events can be read by anyone. Publishing requires NIP-42 authentication with strict authorization.
 - **Dockerized**: Comes with `docker-compose.yml` for easy and reproducible deployment.
 - **Specialized Logic**: Contains strict validation rules tailored specifically for HyperQube network events.
 
@@ -43,8 +43,9 @@ For a detailed technical specification of these custom Nostr events, please see 
     - If `status` is `failure`, an `error` tag with a reason is required.
 
 #### 2. **Authentication**
-- **NIP-42 Required**: All clients must authenticate to read or write any events. The relay will send an `AUTH` challenge on connect.
-- **Permissioned Writing**: Only public keys defined in the `AUTHORIZED_PUBKEYS` environment variable can publish `HyperSignal` (kind 33321) events. This ensures that only trusted administrators can issue commands to the network.
+- **Reading Events**: No authentication required. Anyone can subscribe to and read events from the relay.
+- **Writing Events**: NIP-42 authentication is required to publish any events. The relay will send an `AUTH` challenge on connect.
+- **Permissioned Publishing**: Only public keys defined in the `AUTHORIZED_PUBKEYS` environment variable can publish `HyperSignal` (kind 33321) events. This ensures that only trusted administrators can issue commands to the network.
 
 ## API Endpoints
 - **WebSocket**: `ws://localhost:3334`
@@ -139,6 +140,61 @@ The relay is configured via environment variables loaded from a `.env` file.
 | `HOST` | The host interface for the relay to bind to. | `0.0.0.0` |
 | `DB_QUERY_LIMIT`| The default query limit for event requests. | `100` |
 | `DB_KEEP_RECENT_EVENTS`| Whether to keep an in-memory cache of recent events. | `false` |
+
+## Upgrading the Relay
+
+### For Docker Deployments
+
+If you're running the relay via Docker Compose:
+
+```bash
+# Navigate to your qubestr directory
+cd /path/to/qubestr
+
+# Pull the latest changes
+git pull origin main
+
+# Rebuild and restart the containers
+docker-compose down
+docker-compose up --build -d
+
+# Verify the relay is running
+docker-compose logs -f qubestr
+```
+
+**Note:** The database volume is preserved during upgrades, so your event history will remain intact.
+
+### For Local Development/Standalone Deployments
+
+If you're running the relay locally without Docker:
+
+```bash
+# Navigate to your qubestr directory
+cd /path/to/qubestr
+
+# Pull the latest changes
+git pull origin main
+
+# Update Go dependencies
+go mod tidy
+
+# Stop the running relay (Ctrl+C if running in foreground, or kill the process)
+
+# Rebuild and restart
+go run ./cmd/qubestr
+```
+
+### Migration Notes
+
+**Upgrading from versions with mandatory read authentication:**
+
+This version changes the authentication model:
+- **Previous behavior**: Both reading and writing events required NIP-42 authentication
+- **New behavior**: Reading is publicly accessible, writing still requires authentication
+
+**No database migrations required.** This change only affects the relay's authentication logic, not the data schema. Your existing PostgreSQL database and events remain unchanged.
+
+**Breaking change for clients:** Clients that were previously required to authenticate for reading events no longer need to do so. However, clients that already authenticate will continue to work without any changes.
 
 ## API Examples
 

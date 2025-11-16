@@ -139,9 +139,11 @@ func ValidateQubeManagerEvent(ctx context.Context, event *nostr.Event) (bool, st
 }
 
 func RequireAuth(ctx context.Context, filter nostr.Filter) (bool, string) {
-	if khatru.GetAuthed(ctx) == "" {
-		return true, "auth-required: this relay requires authentication to read events"
+	authenticatedPubkey := khatru.GetAuthed(ctx)
+	if authenticatedPubkey == "" {
+		log.Printf("Unauthenticated read request. Filter: %+v", filter)
 	}
+	// Allow all read requests, both authenticated and unauthenticated
 	return false, ""
 }
 
