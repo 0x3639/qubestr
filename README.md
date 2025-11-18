@@ -10,7 +10,7 @@ The relay exclusively handles two custom event kinds:
 - **HyperSignal (Kind 33321)**: Used by HC1 developers to broadcast commands to HyperQube nodes, such as software upgrades or network reboots.
 - **QubeManager (Kind 3333)**: Used by HyperQube nodes to report back the status (`success` or `failure`) of a command they have executed.
 
-All interactions with this relay require NIP-42 authentication to ensure a secure and spam-resistant environment.
+The relay uses selective authentication: only command events (Kind 33321) require NIP-42 authentication from authorized developers, while node status reports (Kind 3333) and read operations are publicly accessible to minimize operational overhead.
 
 For a detailed technical specification of these custom Nostr events, please see [hyperqube-events.md](./hyperqube-events.md).
 
@@ -100,7 +100,7 @@ For a detailed technical specification of these custom Nostr events, please see 
 3.  **Start a PostgreSQL database:**
     You can use the provided `docker-compose.yml` to start only the database:
     ```bash
-    docker-compose up -d postgres
+    docker-compose up -d db
     ```
     Alternatively, run PostgreSQL locally.
 
@@ -143,7 +143,7 @@ The relay is configured via environment variables loaded from a `.env` file.
 | `PORT` | The port for the relay to listen on. | `3334` |
 | `HOST` | The host interface for the relay to bind to. | `0.0.0.0` |
 | `DB_QUERY_LIMIT`| The default query limit for event requests. | `100` |
-| `DB_KEEP_RECENT_EVENTS`| Whether to keep an in-memory cache of recent events. | `false` |
+| `DB_KEEP_RECENT_EVENTS`| Whether to keep an in-memory cache of recent events. | `true` |
 
 ## Upgrading the Relay
 
